@@ -82,3 +82,9 @@ export const JavaScriptDate = createPropValidator((key, value) => {
   }
   return new Date(value);
 });
+
+export const Initialize = createPropValidator(
+  (key, value, formatter: (value: string) => any) => {
+    return formatter(value);
+  },
+);
