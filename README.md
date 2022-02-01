@@ -1,73 +1,150 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo_text.svg" width="320" alt="Nest Logo" /></a>
-</p>
+# @sonyahon/config
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
-
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
-
-## Description
-
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+This is a config module for NestJS
 
 ## Installation
-
 ```bash
-$ npm install
+yarn install https://github.com/SonyaHon/sonyahon_config
+# OR
+npm install https://github.com/SonyaHon/sonyahon_config
 ```
 
-## Running the app
+## Usage
 
-```bash
-# development
-$ npm run start
+```typescript
+// configs/app.config.ts
+@Config('APP') // Prefix of .env keys
+export class AppConfig {
+  @EnvVar('PORT') // Postfix of .env keys. In this keys APP__PORT env will be used
+  @Integer()
+  public port = 6969; // One can provide a default value. It will be used if no environmnet variable is present
+}
 
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+// main.module.ts
+@Module({
+  imports: [ConfigModule.forRoot([AppConfig], {})]
+})
+export class MainModule {
+}
 ```
 
-## Test
+## Getting the config values
+There are several ways to get the needed config value:
 
-```bash
-# unit tests
-$ npm run test
+```typescript
+// Get by config token (in injects, app.get, etc)
+const config: AppConfig = app.get(getConfigToken(AppConfig));
+// Or by config value token
+const redisPort: number = app.get(getConfigValueToken(RedisConfig, 'port'));
 
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+// Via decorators
+@Injectable()
+export class SomeService {
+  constructor(
+    @InjectConfig(AppConfig) // Get the whole config
+    private readonly appConfig: AppConfig,
+    @InjectValue(RedisConfig, 'port')
+    private readonly redisPort: number,
+  ) {
+  }
+}
 ```
 
-## Support
+## Describing configurations
+### Marking class as a configuration
+Each class decorated with `@Config(prefix?: string)` decorator is considered
+a config. Note that the `prefix` parameter is optional. 
+Examples:
+```typescript
+@Config('APP') // APP__* env variables will be used for this config
+export class AppConfig {
+  ...
+}
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+@Config() // Will use only variables which are described via `@EnvVar` decorator
+export class NoPrefixConfig {
+  ...
+}
+```
+### Configuring properties
 
-## Stay in touch
+If your property is provided via the ENV variable, you should use the `@EnvVar` decorator
+```typescript
+...
 
-- Author - [Kamil Myśliwiec](https://kamilmysliwiec.com)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+  @EnvVar('VARIABLE') // In case there were no prefix in the `Config` decorator this will look app just the "VARIABLE" env variable. If there was some prefix, then "PREFIX__VARIABLE" env will be used.
+  public variable = 'some-default-value'; // You can provide a default value, which will be used if the desired env variable is not presented
+...
+```
 
-## License
+### Properties validation
+There are some default validation decorators for properties:
+* `@Integer(options?: {from?: number, to?: number})`: ensures that the passed variable is an integer. You can optionally pass `from` and `to` options to ensure that this integer is in range.
+* `@String(options?: {withLength?: number, from?: number, to?: number})`: ensures that the passed variable is a string with specified length.
+* `@AnyNumber(options?: {from?: number, to?: number})`: same as `@Integer` but accepts floats too.
+* `@Boolean()`: tries to convert a string "true"/"false" to a boolean value. Note that it can accept only this 2 strings.
+* `JavaScriptDate()`: tries to convert input to a JavaScriptDate. Throws if this conversion fails
+* `@Initialize(initializer: (value: string) => any)`: applies initializer to the value.
+* `@Email()`: Validates the string w/ a email RegExp. 
+Examples:
+```typescript
+...
+  @EnvVar('PORT')     // Looks  for the "PORT" env
+  @Integer()          // Ensures that it is an Int
+  public port = 5432; // Default value if "PORT" env is not provided
+...
+...
+  @EnvVar('PASSWORD')  
+  @String({from: 8})   
+  public port = "suppa"; // This will throw an error in case the "PASSWORD" env is not found or it is too short. Cause the default value "suppa" will not pass the "{from: 8}" validation test
+```
 
-Nest is [MIT licensed](LICENSE).
+### Custom validators
+Sometimes the included validators are not enough. In this case you can leverage these to methods:  
+
+`createPropValidator(validator: (key: string, value: any, options?: any) => any)`  
+
+**Note 1:** Remember that value has type of `any` because the default values are going throw these validations too.  
+**Note 2:** If you will throw `ConfigModuleValidationException` it will be handled to show better error reports.
+```typescript
+// Exmaple of implementing a simple validator via createPropValidator
+const TwoOrEight = createPropValidator((key, value: any, options?: {fallbackToTwo: boolean}) => {
+  if (value === 2 || value === 8) return value; // No need to do any work. Probably one of the default values;
+  const num = parseInt(value);
+  if (isNan(num) || num !== 2 || num !== 8) {
+    if (options.fallbackToTwo) { // fallbackToTwo -> just return the fallback value
+      return 2;
+    } 
+    throw new ConfigModuleValidationException('value is not 2 or 8'); // Passed value is not a number or it is not equal to 2 or 8. 
+  }
+  return value;
+});
+
+// Somewhere in config:
+@Config() 
+export class Configuration {
+  @EnvVar('TWO_OR_EIGHT')
+  @TwoOrEight()
+  public twoOrEight = 2;
+}
+```
+
+`createRegExpPropValidator(regexp: RegExp, name?: string)`  
+
+This is used if you need to use a regexp validation. `name` is used in the error messages
+
+```typescript
+// Example of implementing a simple regexp validator via createRegExpPropValidator
+const ContainsAPP = createRegExpPropValidator(/.*APP.*/, 'ContainsAPP');
+
+// Using
+@Config()
+export class SomeConfig {
+  @EnvVar('APP_NAME')
+  @ContainsAPP()
+  public app;
+}
+
+// APP_NAME="NOT CONTAIN NEEDED INFO" node main.js
+// Exception: value does not match ContainsAPP regexp. Where: SomeConfig::app. Passed value: <NOT CONTAIN NEEDED INFO> with type of "string"
+```
