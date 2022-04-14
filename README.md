@@ -20,9 +20,23 @@ export class AppConfig {
 
 // main.module.ts
 @Module({
-  imports: [ConfigModule.forRoot([AppConfig], {})]
+  imports: [ConfigModule.forRoot([AppConfig], {
+    defineGlobal: true, // Default is false, if true this will be @Global
+    useFile: './config.env', // Use this if u want to pass .env file directly
+    useString: 'APP__PORT=6969', // Use this if u want to pass .env-like string
+    // Default usage is to look into process.env via 'dotenv' package 
+  })]
 })
 export class MainModule {
+}
+
+// some.service.ts
+@Injectable()
+export class SomeService {
+  constructor(
+    @InjectConfig(AppConfig)
+    private readonly appConfig: AppConfig,
+  ) {}
 }
 ```
 
@@ -103,7 +117,10 @@ Sometimes the included validators are not enough. In this case you can leverage 
 `createPropValidator(validator: (key: string, value: any, options?: any) => any)`  
 
 **Note 1:** Remember that value has type of `any` because the default values are going throw these validations too.  
-**Note 2:** If you will throw `ConfigModuleValidationException` it will be handled to show better error reports.
+**Note 2:** If you will throw `ConfigModuleValidationException` it will be handled to show better error reports. It will look like this: 
+```
+Exception: {PASSED ERROR MESSAGE}. Where: SomeConfig::app. Passed value: <ACTUAL VALUE> with type of "string"
+```
 ```typescript
 // Exmaple of implementing a simple validator via createPropValidator
 const TwoOrEight = createPropValidator((key, value: any, options?: {fallbackToTwo: boolean}) => {
@@ -143,6 +160,6 @@ export class SomeConfig {
   public app;
 }
 
-// APP_NAME="NOT CONTAIN NEEDED INFO" node main.js
-// Exception: value does not match ContainsAPP regexp. Where: SomeConfig::app. Passed value: <NOT CONTAIN NEEDED INFO> with type of "string"
+// APP_NAME="DOES NOT CONTAIN NEEDED INFO" node main.js
+// Exception: value does not match ContainsAPP regexp. Where: SomeConfig::app. Passed value: <DOES NOT CONTAIN NEEDED INFO> with type of "string"
 ```
