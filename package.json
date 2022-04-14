@@ -2,11 +2,14 @@
   "name": "@sonyahon/config",
   "version": "0.0.4",
   "description": "",
-  "author": "",
+  "author": "sonyahon <volkov030@gmail.com>",
   "private": false,
   "license": "MIT",
   "main": "dist/index.js",
   "keywords": ["nestjs", "config", "env", "variables", "dotenv"],
+  "repository": {
+    "url": "https://github.com/SonyaHon/sonyahon_config"
+  },
   "scripts": {
     "prebuild": "rimraf dist",
     "postinstall": "npm run build",
