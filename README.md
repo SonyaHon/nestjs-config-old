@@ -4,9 +4,7 @@ This is a config module for NestJS
 
 ## Installation
 ```bash
-yarn install https://github.com/SonyaHon/sonyahon_config
-# OR
-npm install https://github.com/SonyaHon/sonyahon_config
+npm install @sonyahon/config
 ```
 
 ## Usage
