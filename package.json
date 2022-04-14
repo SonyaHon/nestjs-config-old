@@ -1,11 +1,12 @@
 {
   "name": "@sonyahon/config",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "",
   "author": "",
   "private": false,
   "license": "MIT",
   "main": "dist/index.js",
+  "keywords": ["nestjs", "config", "env", "variables", "dotenv"],
   "scripts": {
     "prebuild": "rimraf dist",
     "postinstall": "npm run build",
